@@ -1,0 +1,15 @@
+settings.json
+data/
+*.log
+.env
+.env.*
+venv/
+.venv/
+__pycache__/
+*.pyc
+.DS_Store
+*.safetensors
+*.pt
+*.pth
+*.ckpt
+environment-before-studio.txt
