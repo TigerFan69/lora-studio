@@ -1,0 +1,47 @@
+{
+  "27": {
+    "class_type": "LoadImage",
+    "inputs": {
+      "image": "replace-with-your-comfy-input-image.png"
+    }
+  },
+  "3": {
+    "class_type": "DownloadAndLoadFlorence2Model",
+    "inputs": {
+      "model": "MiaoshouAI/Florence-2-large-PromptGen-v2.0",
+      "precision": "bf16",
+      "convert_to_safetensors": false
+    }
+  },
+  "2": {
+    "class_type": "Florence2Run",
+    "inputs": {
+      "image": [
+        "27",
+        0
+      ],
+      "florence2_model": [
+        "3",
+        0
+      ],
+      "text_input": "",
+      "task": "more_detailed_caption",
+      "fill_mask": true,
+      "keep_model_loaded": false,
+      "max_new_tokens": 1024,
+      "num_beams": 3,
+      "do_sample": true,
+      "output_mask_select": "",
+      "seed": 42
+    }
+  },
+  "4": {
+    "class_type": "easy showAnything",
+    "inputs": {
+      "anything": [
+        "2",
+        2
+      ]
+    }
+  }
+}
