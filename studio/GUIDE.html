@@ -1,0 +1,117 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>LoRA Studio Guide</title><style>body{font:16px system-ui;max-width:960px;margin:2rem auto;padding:1rem}pre{white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.55}section{margin-bottom:3rem}</style><h1>LoRA Studio Guide</h1><section><h2>README.md</h2><pre># LoRA Studio — Community Preview
+
+A local, browser-based character LoRA workflow: review images and captions, prepare dataset revisions, train, and copy saved adapters to ComfyUI.
+
+**Prerequisite: a working, compatible Linux NVIDIA ai-toolkit training installation must already be installed before running this package.** This is an add-on Studio, not a fresh-machine training installer. The complete Studio installation on a clean machine has not been verified. A generic latest ai-toolkit checkout is not automatically equivalent to the tested, locally patched runtime.
+
+Current development focuses on Krea 2 LoRAs for 12 GB VRAM cards, with an eventual goal of 8 GB cards. Neither target is established compatibility for this preview; the recorded development baseline is 16 GB. No paid membership is required.
+
+Start with [the prerequisite checklist](docs/PREREQUISITES.md), then [installation](docs/INSTALL.md). Read [validation limits](docs/VALIDATION.md) before choosing training settings. See [GitHub publishing](docs/PUBLISHING.md) to distribute this preview.
+
+The development baseline is Linux with an NVIDIA RTX 4080 16 GB. This does not establish support for every 16 GB GPU or lower-memory card. Krea 2 RAW completed a short 20-step functional test; longer character-quality runs remain to be evaluated.
+
+Includes dataset review, removal/restoration, caption drafts, immutable prepared revisions, training controls, checkpoint downloads, configurable ComfyUI copy destination, and workflow cues. No model weights, credentials, datasets, or trained personal adapters are included. No training or downloads start simply by unpacking this folder.
+
+Studio source is MIT licensed; upstream software and model terms apply separately. This preview is for a trusted single operator on loopback or a private Tailscale connection, not an unauthenticated public website.
+</pre></section><section><h2>docs/PREREQUISITES.md</h2><pre># Before installing: prerequisite checklist
+
+## Required for Studio and training
+
+- [ ] Linux host; the browser can run on another computer. Windows/macOS training is not validated by this preview.
+- [ ] NVIDIA GPU and a working NVIDIA driver, confirmed with `nvidia-smi`. Tested baseline: RTX 4080 with 16 GB VRAM. Close other GPU workloads before training.
+- [ ] Adequate system RAM, swap, and disk space. The development machine had about 32 GB RAM and substantial swap. Reserve space for complete model downloads, caches, dataset copies, and checkpoints; a 26.3 GB RAW file is only one part of the installation. A minimum RAM/disk specification has not been established.
+- [ ] [ai-toolkit](https://github.com/ostris/ai-toolkit) already installed and able to train using the intended profile, with `run.py` and `venv/bin/python`. Krea 2 requires the Krea 2 trainer extension. The tested runtime includes local memory-management changes; unmodified upstream installation parity is unverified.
+- [ ] Python and all ai-toolkit dependencies in that environment, including a CUDA-enabled PyTorch build compatible with the NVIDIA driver, Transformers, Diffusers, bitsandbytes, optimum-quanto, Hugging Face Hub, and safetensors. Follow the trainer&#x27;s requirements; do not replace a working Torch/CUDA stack merely to install the UI. A separately installed CUDA toolkit is needed only if a dependency requires compilation, not simply because Studio uses a GPU.
+- [ ] Studio UI packages: FastAPI, Uvicorn, python-multipart, Pillow, and PyYAML (see `requirements-ui.txt`). The supplied ranges are not a fully locked environment.
+- [ ] The complete locally downloaded assets for the selected training profile, with access/license requirements handled by the user. Model weights are not bundled. ComfyUI-only quantized checkpoints generally cannot replace the training assets.
+- [ ] A modern browser, write permission to Studio&#x27;s data directory, and permission to read model/dataset paths.
+
+## Required for ComfyUI copy and generation
+
+- [ ] [ComfyUI](https://github.com/Comfy-Org/ComfyUI) installed on the same server, with its own working dependencies and the intended inference model, text encoder, and VAE.
+- [ ] A writable LoRA destination (normally `ComfyUI/models/loras`). Configure custom destinations in **04 Settings**. Copying a file does not establish compatibility with every model family.
+- [ ] Refresh ComfyUI&#x27;s model list after copying. Do not generate while a memory-intensive training job is running on the same GPU.
+
+## Additional requirements for automatic caption drafts
+
+- [ ] ComfyUI running at `http://127.0.0.1:8188` on the Studio server; this preview&#x27;s caption endpoint is fixed to that address.
+- [ ] [ComfyUI-Florence2](https://github.com/kijai/ComfyUI-Florence2) custom nodes and their dependencies. **Florence2Run is a node in this project, not a separate application to install.** The workflow also requires `DownloadAndLoadFlorence2Model`.
+- [ ] [ComfyUI-Easy-Use](https://github.com/yolain/ComfyUI-Easy-Use), providing the `easy showAnything` node, and its dependencies.
+- [ ] [Florence-2-large-PromptGen-v2.0](https://huggingface.co/MiaoshouAI/Florence-2-large-PromptGen-v2.0) complete model files under `ComfyUI/models/LLM/Florence-2-large-PromptGen-v2.0`, including `model.safetensors`.
+- [ ] A working caption workflow with the node interfaces used in `workflows/florence_caption_api.json`. Current clean-install compatibility of all custom-node versions is not certified. Manual caption editing remains available without automatic captioning.
+
+## Optional
+
+- [ ] User systemd for `--service` startup.
+- [ ] Tailscale for private remote browser access, or an SSH tunnel to loopback. No public port forwarding is required.
+- [ ] Git for obtaining source and reporting changes; not required just to unpack and run this folder.
+
+## Model sources and terms
+
+- Schnell: [model and license](https://huggingface.co/black-forest-labs/FLUX.1-schnell), plus [Schnell training adapter](https://huggingface.co/ostris/FLUX.1-schnell-training-adapter). Obtain the full Diffusers model, not only its transformer.
+- Dev: [model, access and license](https://huggingface.co/black-forest-labs/FLUX.1-dev). Obtain the full Diffusers model. Its terms differ from Schnell.
+- Krea 2 RAW: [model, access and terms](https://huggingface.co/krea/Krea-2-Raw), [Qwen3-VL-4B-Instruct](https://huggingface.co/Qwen/Qwen3-VL-4B-Instruct), and the VAE from [Qwen-Image](https://huggingface.co/Qwen/Qwen-Image). Exact asset revisions used by the profile are in `krea_profile.py`.
+
+Download directly from the respective publisher and review each license. No redistribution permission for model weights is conveyed by this package. Gated/restricted weights must not be added to the public release. Model access tokens belong in the user&#x27;s local credential store, never in GitHub.
+</pre></section><section><h2>docs/INSTALL.md</h2><pre># Install onto an existing compatible training host
+
+Use Python 3.12 (the tested runtime) or a compatible newer version; older Python is not supported by this preview.
+
+First complete [PREREQUISITES.md](PREREQUISITES.md). This installer configures Studio only. It does not install ai-toolkit, PyTorch, CUDA, ComfyUI, custom nodes, or model weights. A fresh-machine end-to-end installation of this release has not been tested.
+
+1. Place this folder in a new location on the Linux server. Do not overlay an existing Studio installation. Back up any existing Studio settings and data before changing an installation.
+2. Activate or identify the existing ai-toolkit virtual environment. If UI packages are missing, install them with that environment&#x27;s Python after recording/backing up its package state:
+
+```sh
+/path/to/ai-toolkit/venv/bin/python -m pip freeze &gt; environment-before-studio.txt
+/path/to/ai-toolkit/venv/bin/python -m pip install -r requirements-ui.txt
+```
+
+These commands assume the current directory is this release folder. Inspect proposed dependency changes first on a working training host; the UI requirements are version ranges, not a reproducible training environment lock.
+
+3. Configure Studio with one command once prerequisites are present:
+
+```sh
+python3 install.py --toolkit /path/to/ai-toolkit
+```
+
+The installer prints the startup command. Run it from this folder and open `http://127.0.0.1:8765` on the server. Alternatively add `--service` to create and start a user systemd service. Use `--bind YOUR_TAILSCALE_IP` for private remote access. The installer refuses to overwrite existing settings or an existing service.
+
+For Schnell, `--template /path/to/known-working-training.yaml` explicitly selects your existing base and training-adapter paths. Without it, Studio uses the locally cached default Schnell files; that fallback does not enforce a model revision. Keep the known-working template for reproducibility.
+
+4. With Studio stopped, adjust `settings.json` if necessary: `comfy_root` is the absolute ComfyUI directory (default: a sibling of ai-toolkit). `model_paths` can map `flux1-dev` to the complete local model directory. `krea2_paths` can specify `raw` (checkpoint file), `text_encoder` (complete directory), and `vae` (repository root containing `vae/`). Otherwise Dev/Krea use the pinned local caches referenced in the source. Studio does not download missing training models.
+5. Open Studio, create a project, upload images, review captions and remove unwanted images, then prepare a dataset revision. Choose only a locally ready profile. Confirm the selected model family and available GPU memory before starting a short test.
+6. Inspect completion, logs, and a saved adapter before trying a longer run. Begin quality evaluation at 500 steps with the tested settings unchanged; 2,000 steps is available but is not a validated quality or long-run stability guarantee.
+7. Use **04 Settings** for the destination folder, then **Copy to ComfyUI**, or **Download to computer** for a local browser download.
+
+## Safety, stopping and rollback
+
+This is a trusted single-user application with filesystem access and no login system. Keep it private. Never expose it directly to the internet.
+
+Stop training through Studio and wait for it to finish stopping before stopping the web service. The service intentionally uses KillMode=process: stopping it alone may leave a detached training/caption worker running. Inspect the GPU and running jobs before restarting or switching versions.
+
+For a service installation, `systemctl --user disable --now lora-studio.service` stops/disables the UI. Preserve `settings.json`, `data/`, output adapters and any custom destination files. To roll back, restore the previous application folder and its service configuration, then reload user systemd and start that version. Do not overwrite newer data with an older backup without first preserving it. Manual startup can be stopped with Ctrl-C once jobs are stopped.
+
+The installer never deletes existing data or installs model weights. If service creation fails after settings were written, review those settings before retrying; do not delete an existing installation&#x27;s configuration blindly.
+</pre></section><section><h2>docs/VALIDATION.md</h2><pre># Validation and limits
+
+The development session recorded successful operation on an RTX 4080 (16 GB), Linux, about 32 GB system RAM and substantial swap. This is evidence for that configured machine, not a clean-install certification of this release folder.
+
+Krea 2 RAW: 20 training steps completed; approximately 113 seconds including startup/save, observed GPU peak 12,610 MiB. The saved adapter&#x27;s tensors were finite and a 512px Turbo inference test with the adapter completed. Sampling GPU memory is not an exact allocator peak. A short functional test does not prove identity quality, 2,000-step stability, 1024px fit, or support on smaller GPUs.
+
+Settings: 512px, batch 1, rank/alpha 16, base uint4, text encoder qfloat8, cached latents/text embeddings, gradient checkpointing, training previews off, learning rate 0.0001. See `krea_profile.py` for the complete profile. Historical Schnell and Dev short tests also completed on the development machine.
+
+The previously recorded runtime used Python 3.12.14, Torch 2.14.1+cu130, Transformers 5.5.3, Diffusers 0.39.0.dev0, bitsandbytes 0.50.2 and optimum-quanto 0.2.4. These observations are not installation instructions or a complete dependency lock. The ai-toolkit runtime had local memory changes. Rebuilding that full runtime on a clean host remains unverified for this Studio release.
+
+The accompanying software tests exercise dataset/configuration and UI behavior; they do not train a model. Run with the compatible toolkit environment, adding its root to PYTHONPATH:
+
+```sh
+PYTHONPATH=/path/to/ai-toolkit:. /path/to/ai-toolkit/venv/bin/python -m unittest discover -s tests -v
+```
+
+Do not run tests concurrently with real training. Report hardware, selected profile, settings, failure stage and redacted logs. Never attach tokens or private datasets to a public issue.
+
+## Release-folder check (2026-10-22)
+
+All 36 software tests passed in an isolated temporary copy using the existing Linux training environment, with no active training. This replaces the earlier run in which three tests were blocked by the external-training safety guard. These tests do not perform GPU training or establish fresh-machine compatibility. Python and browser JavaScript syntax checks passed in the earlier packaging check; application code has not changed since that check.
+</pre></section></html>

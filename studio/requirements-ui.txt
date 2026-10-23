@@ -1,0 +1,6 @@
+# Use the existing ai-toolkit virtual environment. No training packages here.
+fastapi>=0.115,<1
+uvicorn>=0.30,<1
+python-multipart>=0.0.18,<1
+Pillow>=10,<13
+PyYAML>=6,<7
