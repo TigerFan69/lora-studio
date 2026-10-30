@@ -6,12 +6,19 @@ Public source for a local browser interface that prepares image datasets, edits 
 
 ## Download and install
 
-[Download LoRA Studio — application and source ZIP](https://github.com/TigerFan69/lora-studio/raw/refs/heads/main/LoRA-Studio-2026-10-23.zip). Extract it and open the `LoRA-Studio/studio` folder. No account or membership is required to download. All application source is inside the archive; this is not a compiled desktop installer.
+[Download a versioned release](https://github.com/TigerFan69/lora-studio/releases). On the release page, choose **Source code (zip)** or **Source code (tar.gz)**, extract it, and open the `studio` folder. You can also [browse the source](studio/) or clone the repository. No account or membership is required to download. This is Python application source, not a compiled desktop installer.
+
+```sh
+git clone https://github.com/TigerFan69/lora-studio.git
+cd lora-studio/studio
+```
+
+GitHub generates the source archives from release tags. Generated application ZIPs belong in release assets, rather than the tracked source tree. The original October 23 archive is retained as a legacy release asset; its folder layout is `LoRA-Studio/studio`.
 
 This is the complete Studio application source, including its web interface, installer, training profiles, optional command-line helpers, tests and guides. It is not an all-in-one AI training environment and contains no model weights.
 
-1. Read `docs/PREREQUISITES.md` inside the archive. You need Linux, an NVIDIA GPU, Python 3.12, a working compatible AI Toolkit installation with its training dependencies, and the separately licensed models for your selected profile.
-2. Follow `docs/INSTALL.md` inside the archive. Use the existing toolkit environment; do not replace a working Torch/CUDA installation just to add Studio.
+1. Read [the prerequisites](studio/docs/PREREQUISITES.md). You need Linux, an NVIDIA GPU, Python 3.12, a working compatible AI Toolkit installation with its training dependencies, and the separately licensed models for your selected profile.
+2. Follow [the installation guide](studio/docs/INSTALL.md). Use the existing toolkit environment; do not replace a working Torch/CUDA installation just to add Studio.
 3. From `studio`, configure it with `python3 install.py --toolkit /path/to/ai-toolkit`. The installer prints the startup command. Run it and open `http://127.0.0.1:8765` on that host. Settings and runtime data are created locally, not supplied in this repository.
 4. Create a project, add images, review captions, prepare a dataset revision, and confirm the selected model profile before a short training test. The interface supports Schnell, Dev and Krea 2 RAW profiles when their required assets and trainer are present.
 
@@ -21,7 +28,7 @@ The application has filesystem access and no login. Keep it on loopback or your 
 
 This is an early technical release for existing training hosts. A fresh-machine installation is not yet verified. The development baseline is Linux with an RTX 4080 16 GB, about 32 GB system RAM and swap; its AI Toolkit runtime includes local memory changes.
 
-Current development focuses on Krea 2 LoRAs for 12 GB VRAM cards, with 8 GB as an eventual goal. Neither is certified compatibility for this release. See `docs/VALIDATION.md` inside the archive for the measured tests. The unchanged core application passed 36 software tests in an isolated copy of the existing environment; those tests do not certify training quality or VRAM fit.
+Current development focuses on Krea 2 LoRAs for 12 GB VRAM cards, with 8 GB as an eventual goal. Neither is certified compatibility for this release. See [validation and limits](studio/docs/VALIDATION.md) for the measured tests. The unchanged core application passed 36 software tests in an isolated copy of the existing environment; those tests do not certify training quality or VRAM fit.
 
 ## Feedback and community
 
@@ -31,7 +38,7 @@ Optional [Ko-fi support and character rewards](https://ko-fi.com/tigerfan69) are
 
 ## License and releases
 
-Studio source is MIT licensed; see [LICENSE](LICENSE). AI Toolkit and all models retain their own licenses. Attribution for the optional legacy-loader helper is in `docs/THIRD-PARTY.md` inside the archive.
+Studio source is MIT licensed; see [LICENSE](LICENSE). AI Toolkit and all models retain their own licenses. Attribution for the optional legacy-loader helper is in [third-party notices](studio/docs/THIRD-PARTY.md).
 
 This is the main public application repository. The separate `lora-studio-preview` repository retains its previously scheduled October 29, 2026, 11:59 p.m. Central download-window closure. That schedule does not close this repository. Downloaded MIT copies remain usable and redistributable.
 
